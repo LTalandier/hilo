@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="lobby" class="screen">
+            <h1>Hilo</h1>
+            <div class="form-group">
+                <label for="player-name">Your Name</label>
+                <input type="text" id="player-name" placeholder="Enter your name">
+            </div>
+            <div class="form-group">
+                <label for="game-id">Game ID</label>
+                <input type="text" id="game-id" placeholder="Create or join a game">
+                <button id="join-game-btn">Join Game</button>
+            </div>
+            <div id="players-list" class="hidden">
+                <h2>Players</h2>
+                <ul id="players"></ul>
+                <button id="start-game-btn" disabled>Start Game</button>
+            </div>
+        </div>
+
+        <div id="game-board" class="screen hidden">
+            <div class="game-info">
+                <div id="round-info">Round <span id="current-round">1</span></div>
+                <div id="current-player-info">Player: <span id="current-player">-</span></div>
+                <div id="draw-pile-info"><span id="draw-pile-count">0</span> cards</div>
+            </div>
+
+            <div id="setup-phase-info" class="info-box">
+                <h3>Setup Phase</h3>
+                <p>Choose 2 cards to flip face-up</p>
+            </div>
+
+            <div id="shift-choice-controls" class="hidden">
+                <p id="shift-message">Alignment found! Choose shift direction:</p>
+                <button id="shift-horizontal-btn">Shift Horizontally</button>
+                <button id="shift-vertical-btn">Shift Vertically</button>
+            </div>
+
+            <div class="game-area">
+                <!-- Player grids section first -->
+                <div id="grid-section">
+                    <div id="all-player-grids" class="all-player-grids">
+                        <!-- Player grids will be created dynamically -->
+                    </div>
+                </div>
+                
+                <div class="piles">
+                    <div class="pile-container">
+                        <div id="draw-pile" class="pile">
+                            <div class="card back">?</div>
+                            <span>Draw (<span id="draw-pile-count">0</span>)</span>
+                        </div>
+                        <div id="drawn-card-preview" class="card hidden"></div>
+                    </div>
+                    <div class="pile-container">
+                        <div id="discard-pile" class="pile">
+                            <div id="discard-pile-card" class="card empty"></div>
+                            <span>Discard</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="game-interaction">
+                <!-- Alignment Prompt (Initially Hidden) -->
+                <div id="alignment-prompt" class="hidden">
+                    <p id="alignment-message">Alignment detected! Choose shift direction:</p>
+                    <button id="shift-horizontal-btn">Shift Horizontal</button>
+                    <button id="shift-vertical-btn">Shift Vertical</button>
+                </div>
+
+                <div id="player-message"></div>
+            </div>
+
+            <div class="players-status">
+                <h3>Players</h3>
+                <div id="players-status-list"></div>
+            </div>
+        </div>
+
+        <div id="round-end" class="screen hidden">
+            <h2>Round Ended</h2>
+            <div id="round-scores"></div>
+            <div id="next-round-countdown">Next round: <span id="countdown">5</span></div>
+        </div>
+
+        <div id="game-over" class="screen hidden">
+            <h2>Game Over</h2>
+            <div id="final-scores"></div>
+            <div id="winner-announcement"></div>
+            <button id="new-game-btn">New Game</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html> 
