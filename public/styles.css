@@ -525,7 +525,7 @@ button:disabled {
 .grid-cells {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 120px;
     flex-wrap: wrap;
     width: 100%;
     padding: 0 10px;
@@ -537,20 +537,18 @@ button:disabled {
     align-items: center;
     margin-top: 10px;
     min-width: 120px;
+    position: relative;
+    padding-top: 15px;
 }
 
 .current-player-grid {
-    position: relative;
-    margin: 0 auto;
-    margin-top: 20px;
-    margin-bottom: 10px;
     width: fit-content;
 }
 
 .current-player-grid::before {
     content: "Your Grid";
     position: absolute;
-    top: -10px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     background-color: rgba(255, 235, 59, 0.8);
@@ -560,6 +558,7 @@ button:disabled {
     font-size: 12px;
     font-weight: bold;
     z-index: 10;
+    width: fit-content;
 }
 
 .mini-grid {
