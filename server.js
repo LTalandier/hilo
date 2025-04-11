@@ -276,8 +276,8 @@ io.on('connection', (socket) => {
        // Check if this action completes the final round
        const nextPlayerIndexIfTurnEnds = (game.currentPlayerIndex + 1) % game.players.length;
        if (game.lastRoundTriggered && game.players[nextPlayerIndexIfTurnEnds].id === game.roundTriggererId) {
-           console.log(`Last round completed by ${currentPlayer.name} flipping card. Ending round.`);
-           endRound(gameId); // End the round immediately
+           console.log(`Last round completed by ${currentPlayer.name} flipping card. Triggering end sequence.`);
+           triggerRoundEndSequence(gameId); // Call the sequence function
            return; // Stop further execution in this handler
        }
 
@@ -425,8 +425,8 @@ io.on('connection', (socket) => {
       // Check if this action completes the final round
       const nextPlayerIndexIfTurnEnds = (game.currentPlayerIndex + 1) % game.players.length;
       if (game.lastRoundTriggered && game.players[nextPlayerIndexIfTurnEnds].id === game.roundTriggererId) {
-          console.log(`Last round completed by ${currentPlayer.name}. Ending round.`);
-          endRound(gameId); // End the round immediately
+          console.log(`Last round completed by ${currentPlayer.name} exchanging drawn card. Triggering end sequence.`);
+          triggerRoundEndSequence(gameId); // Call the sequence function
           return; // Stop further execution in this handler
       }
       
@@ -523,8 +523,8 @@ io.on('connection', (socket) => {
     // Check if this action completes the final round
     const nextPlayerIndexIfTurnEnds = (game.currentPlayerIndex + 1) % game.players.length;
     if (game.lastRoundTriggered && game.players[nextPlayerIndexIfTurnEnds].id === game.roundTriggererId) {
-        console.log(`Last round completed by ${currentPlayer.name}. Ending round.`);
-        endRound(gameId); // End the round immediately
+        console.log(`Last round completed by ${currentPlayer.name} exchanging discard card. Triggering end sequence.`);
+        triggerRoundEndSequence(gameId); // Call the sequence function
         return; // Stop further execution in this handler
     }
     
@@ -578,6 +578,7 @@ io.on('connection', (socket) => {
     let foundRowAlignment = false;
     let foundColAlignment = false;
     let foundDiagAlignment = false;
+    const alignedCards = []; // Store the actual cards to be discarded
 
     // Helper to check a pattern and update flags/indices
     const checkPattern = (pattern, type) => {
@@ -594,9 +595,20 @@ io.on('connection', (socket) => {
             card1.color === card2.color && card1.color === card3.color) 
         {
             console.log(`Alignment DETECTED (${type}) for player ${playerId} at indices: ${i1}, ${i2}, ${i3}`);
-            indicesToRemove.add(i1);
-            indicesToRemove.add(i2);
-            indicesToRemove.add(i3);
+            
+            // Add indices only if they aren't already marked (prevents duplicates if cards are part of multiple alignments)
+            if (!indicesToRemove.has(i1)) {
+                 indicesToRemove.add(i1);
+                 alignedCards.push(card1); // Add the card itself
+            }
+            if (!indicesToRemove.has(i2)) {
+                indicesToRemove.add(i2);
+                alignedCards.push(card2); // Add the card itself
+            }
+            if (!indicesToRemove.has(i3)) {
+                indicesToRemove.add(i3);
+                alignedCards.push(card3); // Add the card itself
+            }
             return true; // Alignment found for this pattern
         }
         return false;
@@ -607,7 +619,16 @@ io.on('connection', (socket) => {
     colPatterns.forEach(p => { if (checkPattern(p, 'Column')) foundColAlignment = true; });
     diagPatterns.forEach(p => { if (checkPattern(p, 'Diagonal')) foundDiagAlignment = true; });
 
-    // --- Decision Logic --- 
+    // --- NEW: Discard aligned cards before compaction ---
+    if (alignedCards.length > 0) {
+        // Sort cards by number in descending order (highest number first)
+        alignedCards.sort((a, b) => b.number - a.number); 
+        
+        // Push onto discard pile (lowest number ends up on top)
+        game.discardPile.push(...alignedCards); 
+        console.log(`Player ${playerId} discarded aligned cards:`, alignedCards.map(c => `${c.number} ${c.color}`));
+    }
+    // --- End NEW ---
 
     if (indicesToRemove.size === 0) {
         return false; // No alignments found
@@ -693,7 +714,11 @@ io.on('connection', (socket) => {
     for (const player of game.players) {
       // Calculate score from player's remaining cards
       const playerCards = game.playerGrids[player.id] || [];
-      const roundScore = playerCards.reduce((sum, card) => sum + card.number, 0);
+      // Filter out null cards before calculating score
+      const roundScore = playerCards.reduce((sum, card) => {
+        // Only add score if card is not null
+        return card ? sum + card.number : sum; 
+      }, 0);
       
       // Add to player's total score
       player.roundScore = roundScore;
@@ -714,6 +739,26 @@ io.on('connection', (socket) => {
     }
   }
   
+  // NEW: Function to handle the sequence before ending the round
+  function triggerRoundEndSequence(gameId) {
+    const game = games[gameId];
+    if (!game) return;
+
+    console.log(`Triggering round end sequence for game ${gameId}. Showing final grids.`);
+
+    // Emit the event to show final grids
+    io.to(gameId).emit('showFinalGrids', {
+        playerGrids: createPlayerGridsData(game),
+        players: game.players,
+        message: "Round Complete! Showing final grids before scoring..."
+    });
+
+    // Set timeout to call endRound after a delay
+    setTimeout(() => {
+        endRound(gameId); // Proceed to scoring and next round/game over logic
+    }, 4000); // 4 second delay
+  }
+  
   // Start a new round
   function startNewRound(gameId) {
     const game = games[gameId];
@@ -724,7 +769,8 @@ io.on('connection', (socket) => {
     // Add cards from player grids
     for (const player of game.players) {
       if (game.playerGrids[player.id]) {
-        allCards.push(...game.playerGrids[player.id]);
+        // Filter out null values before spreading
+        allCards.push(...game.playerGrids[player.id].filter(Boolean)); 
       }
       
       // Reset player round score
@@ -984,8 +1030,8 @@ io.on('connection', (socket) => {
     // NOW the turn ends. Check for last round completion *before* advancing index.
     const nextPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
     if (game.lastRoundTriggered && game.players[nextPlayerIndex].id === game.roundTriggererId) {
-        console.log(`Last round completed by ${player.name} after shift choice. Ending round.`);
-        endRound(gameId); // End the round immediately
+        console.log(`Last round completed by ${player.name} after shift choice. Triggering end sequence.`);
+        triggerRoundEndSequence(gameId); // Call the sequence function
         return; // Stop further execution
     }
 

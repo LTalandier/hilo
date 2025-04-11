@@ -378,6 +378,16 @@ function displayAllPlayerGrids(playerGridsData, players) {
         const gridDisplay = document.createElement('div');
         gridDisplay.classList.add('mini-grid');
 
+        // --- Calculate Score ---
+        let playerScore = 0;
+        currentGridData.forEach(card => {
+            if (card && !card.faceDown) {
+                // Just sum the card numbers directly
+                playerScore += card.number;
+            }
+        });
+        // --- End Calculate Score ---
+
         // Always render 9 slots
         for (let i = 0; i < 9; i++) {
             const cardElement = document.createElement('div');
@@ -493,6 +503,14 @@ function displayAllPlayerGrids(playerGridsData, players) {
             gridDisplay.appendChild(cardElement);
         } // End of for loop (0-8)
         playerGridContainer.appendChild(gridDisplay);
+
+        // --- Add Score Display ---
+        const scoreDisplay = document.createElement('div');
+        scoreDisplay.classList.add('player-grid-score');
+        scoreDisplay.textContent = `Score: ${playerScore}`;
+        playerGridContainer.appendChild(scoreDisplay);
+        // --- End Score Display ---
+
         gridCells.appendChild(playerGridContainer);
     });
 
@@ -744,7 +762,6 @@ socket.on('roundEnd', (data) => {
         }
     }, 1000);
 });
-
 socket.on('newRound', (data) => {
     if (!roundEnd || !gameBoard) return;
     roundEnd.classList.add('hidden');
@@ -948,4 +965,32 @@ socket.on('promptShiftChoice', (data) => {
     // Update grid to disable interactivity and clear any previews initially
     clearShiftPreview();
     updateGridInteractivity(players);
+});
+
+// NEW: Listener for showing final grids before round end screen
+socket.on('showFinalGrids', (data) => {
+    console.log('Received showFinalGrids:', data);
+    // Update player grids data
+    Object.assign(playerGrids, data.playerGrids);
+    // Ensure players array is updated if provided
+    if (data.players) players = data.players;
+    
+    // Display the final grids
+    displayAllPlayerGrids(data.playerGrids, players);
+    
+    // Update player status (optional, but good for consistency)
+    const currentPlayer = players.find(p => p.id === playerId); // Or determine current player if needed
+    updatePlayerStatus(players, currentPlayer); 
+    
+    // Display the message
+    if (playerMessage && data.message) {
+        playerMessage.textContent = data.message;
+    }
+    
+    // Disable all actions during this pause
+    if (drawPileDiv) drawPileDiv.style.pointerEvents = 'none';
+    if (discardPileCard) discardPileCard.style.pointerEvents = 'none';
+    if (shiftChoiceControls) shiftChoiceControls.classList.add('hidden');
+    
+    // The game board remains visible. The 'roundEnd' event will handle the transition later.
 });

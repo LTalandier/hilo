@@ -29,7 +29,7 @@
         <div id="game-board" class="screen hidden">
             <div class="game-info">
                 <div id="round-info">Round <span id="current-round">1</span></div>
-                <div id="current-player-info">Player: <span id="current-player">-</span></div>
+                <div id="current-player-info">Turn: <span id="current-player">-</span></div>
                 <div id="draw-pile-info"><span id="draw-pile-count">0</span> cards</div>
             </div>
 
@@ -55,15 +55,13 @@
                 <div class="piles">
                     <div class="pile-container">
                         <div id="draw-pile" class="pile">
-                            <div class="card back">?</div>
-                            <span>Draw (<span id="draw-pile-count">0</span>)</span>
+                            <div class="card back"></div>
                         </div>
                         <div id="drawn-card-preview" class="card hidden"></div>
                     </div>
                     <div class="pile-container">
                         <div id="discard-pile" class="pile">
                             <div id="discard-pile-card" class="card empty"></div>
-                            <span>Discard</span>
                         </div>
                     </div>
                 </div>
