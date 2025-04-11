@@ -790,6 +790,8 @@ io.on('connection', (socket) => {
     for (const player of game.players) {
       player.ready = false;
       player.mustFlipCard = false; // Also reset mustFlipCard
+      player.awaitingShiftChoice = false; // Reset shift choice flag
+      player.pendingAlignmentIndices = null; // Reset pending indices
     }
     
     // Initialize player grids with face-down cards
