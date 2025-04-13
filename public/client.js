@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     shiftHorizontalBtn.addEventListener('click', () => {
         if (currentAction === 'awaitingShiftChoice') {
+            console.log(`[Client] Clicked Horizontal Shift. currentAction: ${currentAction}, gameId: ${gameId}`);
             socket.emit('submitShiftChoice', gameId, 'horizontal');
             clearShiftPreview(); // Clear preview on click
             shiftChoiceControls.classList.add('hidden');
@@ -182,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     shiftVerticalBtn.addEventListener('click', () => {
         if (currentAction === 'awaitingShiftChoice') {
+            console.log(`[Client] Clicked Vertical Shift. currentAction: ${currentAction}, gameId: ${gameId}`);
             socket.emit('submitShiftChoice', gameId, 'vertical');
             clearShiftPreview(); // Clear preview on click
             shiftChoiceControls.classList.add('hidden');
@@ -297,32 +299,39 @@ function updateDiscardPile(discardPile) {
 
 // Update player status display
 function updatePlayerStatus(players, currentPlayer) {
-    if (!playersStatusList) return; // Add safety check
-    playersStatusList.innerHTML = '';
-    
-    players.forEach(player => {
-        const playerDiv = document.createElement('div');
-        playerDiv.classList.add('player-status');
-        
-        if (currentPlayer && player.id === currentPlayer.id) {
-            playerDiv.classList.add('current');
-        }
-        
-        // Get grid data, which might be shorter after alignments
-        const playerGrid = playerGrids[player.id] || []; 
-        // Count face-up cards
-        const faceUpCards = playerGrid.filter(card => card && !card.faceDown).length; 
-        // Get the total number of cards (grid length)
-        const totalCards = playerGrid.length;
-        
-        playerDiv.innerHTML = `
-            <h4>${player.name}</h4>
-            <div>Total Score: ${player.score}</div>
-            <div>Cards: ${faceUpCards}/${totalCards} face up</div>
-        `;
-        
-        playersStatusList.appendChild(playerDiv);
-    });
+    // --- Update Live Score Summary Table (Keep this part) ---
+    const liveScoreTableContent = document.getElementById('live-score-table-content');
+    if (liveScoreTableContent) {
+        liveScoreTableContent.innerHTML = ''; // Clear previous entries
+
+        // Sort players by score (lowest is best)
+        const sortedPlayers = [...players].sort((a, b) => a.score - b.score);
+
+        sortedPlayers.forEach((player, index) => {
+            const scoreItem = document.createElement('div');
+            scoreItem.classList.add('score-summary-item');
+
+            // Highlight the best score (lowest)
+            if (index === 0) {
+                scoreItem.classList.add('best-score');
+            }
+
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('player-name');
+            nameSpan.textContent = player.name;
+
+            const scoreSpan = document.createElement('span');
+            scoreSpan.classList.add('player-score');
+            scoreSpan.textContent = player.score;
+
+            scoreItem.appendChild(nameSpan);
+            scoreItem.appendChild(scoreSpan);
+
+            liveScoreTableContent.appendChild(scoreItem);
+        });
+    } else {
+        console.warn('Live score table content element not found.');
+    }
 }
 
 // Display all player grids
@@ -731,23 +740,48 @@ socket.on('roundEnd', (data) => {
     roundEnd.classList.remove('hidden');
 
     if (!roundScoresDiv || !countdownSpan) return;
-    roundScoresDiv.innerHTML = '';
-    const sortedPlayers = [...data.players].sort((a, b) => b.score - a.score);
+    roundScoresDiv.innerHTML = ''; // Clear previous scores
+
+    // Add a div for the doubling message
+    const doublingMessageDiv = document.createElement('div');
+    doublingMessageDiv.id = 'doubling-message';
+    doublingMessageDiv.style.color = 'green';
+    doublingMessageDiv.style.fontWeight = 'bold';
+    doublingMessageDiv.style.marginBottom = '10px';
+    roundScoresDiv.appendChild(doublingMessageDiv); // Add it before scores
+
+    // Clear the message initially
+    doublingMessageDiv.textContent = '';
+
+    // Check if the current player got their score doubled
+    if (data.doubledPlayerId && data.doubledPlayerId === playerId) {
+        doublingMessageDiv.textContent = 'You finished the round first AND had the highest score! Your round score penalty has been doubled!';
+    }
+
+    // Sort players by total score (lowest is best)
+    const sortedPlayers = [...data.players].sort((a, b) => a.score - b.score);
 
     sortedPlayers.forEach(player => {
         const scoreItem = document.createElement('div');
         scoreItem.classList.add('score-item');
+        
+        let scoreText = `Round score: ${player.roundScore}, Total: ${player.score}`;
+
+        // Indicate if this player's score was doubled
+        if (data.doubledPlayerId && player.id === data.doubledPlayerId) {
+            scoreText += ' (Score Doubled!)';
+            scoreItem.style.color = 'red'; // Highlight the doubled score entry
+            scoreItem.style.fontWeight = 'bold';
+        }
+
+        // Highlight the winner of the round (lowest total score)
         if (player.id === sortedPlayers[0].id) {
-            scoreItem.classList.add('winner');
+            scoreItem.classList.add('winner'); // Maybe use a different style if needed
         }
-        let extraInfo = '';
-        if (player.id === data.lastDiscarder && data.discardPile.length > 0) {
-            const discardPenalty = data.discardPile.reduce((sum, card) => sum + card.number, 0);
-            extraInfo = ` (including -${discardPenalty} from discard pile)`;
-        }
+        
         scoreItem.innerHTML = `
             <div>${player.name}</div>
-            <div>${player.score} points${extraInfo}</div>
+            <div>${scoreText}</div>
         `;
         roundScoresDiv.appendChild(scoreItem);
     });
@@ -948,6 +982,7 @@ socket.on('promptShiftChoice', (data) => {
     console.log('Prompted for shift choice:', data.message, 'Indices:', data.indices);
     currentAction = 'awaitingShiftChoice';
     currentPendingAlignmentIndices = data.indices || []; // Store the indices
+    console.log(`[Client] Set currentAction to: ${currentAction}`); // Log state change
 
     // Show shift controls
     if (shiftChoiceControls) {

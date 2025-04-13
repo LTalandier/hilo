@@ -242,7 +242,8 @@ button:disabled {
     font-weight: bold;
 }
 
-/* Player Status */
+/* Player Status - Remove these styles */
+/*
 .players-status {
     margin-top: 20px;
     text-align: center;
@@ -273,6 +274,7 @@ button:disabled {
 .player-status h4 {
     margin-bottom: 8px;
 }
+*/
 
 #round-scores, #final-scores {
     text-align: center;
@@ -718,4 +720,53 @@ button:disabled {
     font-size: 14px;
     margin-left: 0;
     color: #ffeb3b;
-} 
+}
+
+/* --- Live Score Summary Table --- */
+.score-summary-container {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: rgba(6, 96, 105, 0.8); /* Darker teal background */
+    border-radius: 10px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.score-summary-container h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #ffeb3b; /* Highlight title */
+}
+
+#live-score-table-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.score-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.score-summary-item .player-name {
+    font-weight: bold;
+}
+
+.score-summary-item .player-score {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Style for the best score (lowest) */
+.score-summary-item.best-score {
+    background-color: rgba(255, 235, 59, 0.2); /* Subtle yellow highlight */
+    border: 1px solid #ffeb3b;
+}
+
+/* --- End Live Score Summary Table --- */ 
