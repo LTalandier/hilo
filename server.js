@@ -56,6 +56,7 @@ function createNewGame(gameId) {
     gameStarted: false,
     gamePhase: 'setup', // Add a game phase: 'setup', 'play'
     drawnCardPreview: {}, // Store card being previewed by player ID
+    roundEndSequenceTriggered: false, // Flag to prevent duplicate end sequences
     lastRoundTriggered: false, // Flag for the final round sequence
     roundTriggererId: null, // ID of the player who triggered the end of round
   };
@@ -1015,6 +1016,7 @@ io.on('connection', (socket) => {
     const triggererId = game.roundTriggererId; // Store triggerer ID
     game.lastRoundTriggered = false;
     game.roundTriggererId = null;
+    game.roundEndSequenceTriggered = false; // <-- Reset the new flag here
     
     // Calculate initial round scores and reset the scoreDoubled flag
     for (const player of game.players) {
@@ -1093,6 +1095,15 @@ io.on('connection', (socket) => {
         return;
     }
 
+    // --- NEW CHECK ---
+    if (game.roundEndSequenceTriggered) {
+        console.log(`[Game ${gameId}] Round end sequence already triggered. Ignoring duplicate call.`);
+        return; 
+    }
+    // --- END NEW CHECK ---
+
+    // --- SET FLAG ---
+    game.roundEndSequenceTriggered = true; 
     console.log(`[Game ${gameId}] Triggering round end sequence. Showing final grids for 4 seconds.`);
 
     // Emit the event to show final grids
@@ -1147,6 +1158,7 @@ io.on('connection', (socket) => {
     game.playersReady = 0;
     game.lastRoundTriggered = false; // Reset last round flag
     game.roundTriggererId = null;   // Reset triggerer ID
+    game.roundEndSequenceTriggered = false; // <-- Reset here too
     console.log(`[Game ${gameId}] Starting Round ${game.rounds}. Phase: ${game.gamePhase}. Draw: ${game.drawPile.length}, Discard: ${discardStartCard.number} ${discardStartCard.color}`);
     
     // Reset player ready status and other flags
