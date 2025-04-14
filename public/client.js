@@ -1061,22 +1061,28 @@ socket.on('promptShiftChoice', (data) => {
     updateGridInteractivity(players);
 });
 
-// NEW: Listener for showing final grids before round end screen
-socket.on('showFinalGrids', (data) => {
-    console.log('Received showFinalGrids:', data);
-    // Update player grids data
+// NEW: Listener for revealing final grids (replaces showFinalGrids)
+socket.on('revealFinalGrids', (data) => {
+    console.log('Received revealFinalGrids:', data);
+    
+    // Update player grids data with the revealed cards
     Object.assign(playerGrids, data.playerGrids);
     // Ensure players array is updated if provided
     if (data.players) players = data.players;
     
-    // Display the final grids
+    // Display the final grids with all cards face-up
     displayAllPlayerGrids(data.playerGrids, players);
     
     // Update player status (optional, but good for consistency)
-    const currentPlayer = players.find(p => p.id === playerId); // Or determine current player if needed
-    updatePlayerStatus(players, currentPlayer); 
+    const currentPlayer = players.find(p => p.id === playerId); // Use the stored players array
+    if (currentPlayer) {
+        updatePlayerStatus(players, currentPlayer); 
+    } else {
+        // If current player not found, maybe just use the first player or a default
+        updatePlayerStatus(players, players.length > 0 ? players[0] : null);
+    }
     
-    // Display the message
+    // Display the message indicating card reveal
     if (playerMessage && data.message) {
         playerMessage.textContent = data.message;
     }
@@ -1085,6 +1091,8 @@ socket.on('showFinalGrids', (data) => {
     if (drawPileDiv) drawPileDiv.style.pointerEvents = 'none';
     if (discardPileCard) discardPileCard.style.pointerEvents = 'none';
     if (shiftChoiceControls) shiftChoiceControls.classList.add('hidden');
-    
-    // The game board remains visible. The 'roundEnd' event will handle the transition later.
+    if (drawnCardPreviewDiv) drawnCardPreviewDiv.classList.add('hidden');
+
+    // Update grid interactivity to disable card clicks during reveal
+    updateGridInteractivity(players); // This will re-render grid, removing 'interactive' class
 });

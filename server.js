@@ -1107,18 +1107,33 @@ io.on('connection', (socket) => {
 
     // --- SET FLAG ---
     game.roundEndSequenceTriggered = true; 
-    console.log(`[Game ${gameId}] Triggering round end sequence. Showing final grids for 4 seconds.`);
+    console.log(`[Game ${gameId}] Triggering round end sequence. Revealing final cards for 4 seconds.`);
 
-    // Emit the event to show final grids
-    io.to(gameId).emit('showFinalGrids', {
-        playerGrids: createPlayerGridsData(game),
+    // --- REVEAL ALL CARDS ---
+    console.log(`[Game ${gameId}] Flipping remaining face-down cards for final reveal.`);
+    for (const playerId in game.playerGrids) {
+        const playerGrid = game.playerGrids[playerId];
+        if (playerGrid && Array.isArray(playerGrid)) {
+            playerGrid.forEach(card => {
+                if (card && card.faceDown) {
+                    card.faceDown = false;
+                    // console.log(`[Debug - Game ${gameId}] Flipped card for player ${playerId}`); // Uncomment for verbose debug
+                }
+            });
+        }
+    }
+    // --- END REVEAL ---
+
+    // Emit the event to show final grids (now fully revealed)
+    io.to(gameId).emit('revealFinalGrids', { // Renamed event
+        playerGrids: createPlayerGridsData(game), // Send updated grids
         players: game.players,
-        message: "Round Complete! Showing final grids before scoring..."
+        message: "Revealing final cards before scoring..."
     });
 
     // Set timeout to call endRound after a delay
     setTimeout(() => {
-        console.log(`[Game ${gameId}] Final grid display timer ended. Proceeding to endRound.`);
+        console.log(`[Game ${gameId}] Final grid reveal timer ended. Proceeding to endRound.`);
         endRound(gameId); // Proceed to scoring and next round/game over logic
     }, 4000); // 4 second delay
   }
