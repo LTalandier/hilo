@@ -113,7 +113,7 @@ button:disabled {
     display: flex;
     justify-content: space-between;
     margin-bottom: 20px;
-    font-size: 10px;
+    font-size: 16px;
     flex-wrap: wrap;
     text-align: center;
     max-width: 800px;
@@ -629,20 +629,35 @@ button:disabled {
 @media (max-width: 768px) {
     .all-player-grids {
         padding: 10px;
+        flex-direction: row;
+        overflow-x: auto;
+        align-items: flex-start;
+        width: 100%;
+        padding-bottom: 15px;
     }
     
+    .grid-table {
+        width: auto;
+        align-items: stretch;
+    }
+
     .grid-cells {
-        align-items: center;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: flex-start;
     }
     
     .player-labels-row {
         gap: 10px;
         align-items: center;
+        justify-content: flex-start;
     }
     
     .player-label, .player-grid-container {
         width: auto;
         max-width: 250px;
+        min-width: 100px;
+        flex-shrink: 0;
     }
     
     .mini-grid {
