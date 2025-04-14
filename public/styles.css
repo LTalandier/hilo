@@ -21,7 +21,7 @@ body {
     background-color: #00838f;
     border-radius: 10px;
     padding: 30px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .hidden {
@@ -112,8 +112,8 @@ button:disabled {
 .game-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 30px;
-    font-size: 25px;
+    margin-bottom: 20px;
+    font-size: 10px;
     flex-wrap: wrap;
     text-align: center;
     max-width: 800px;
@@ -132,7 +132,7 @@ button:disabled {
 .piles {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     width: 100%;
 }
 
@@ -147,13 +147,13 @@ button:disabled {
 }
 
 .card {
-    width: 60px;
-    height: 90px;
+    width: 50px;
+    height: 75px;
     border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -175,7 +175,7 @@ button:disabled {
 .card.back::after {
     content: "Hilo";
     position: absolute;
-    font-size: 20px;
+    font-size: 14px;
     color: #ffffff;
 }
 
@@ -480,7 +480,7 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 /* Grid Table */
@@ -527,7 +527,7 @@ button:disabled {
 .grid-cells {
     display: flex;
     justify-content: center;
-    gap: 90px;
+    gap: 20px;
     flex-wrap: wrap;
     width: 100%;
     padding: 0 10px;
@@ -540,7 +540,7 @@ button:disabled {
     margin-top: 8px;
     min-width: 100px;
     position: relative;
-    padding-top: 12px;
+    padding-top: 8px;
 }
 
 .current-player-grid {
@@ -565,9 +565,9 @@ button:disabled {
 
 .mini-grid {
     display: grid;
-    grid-template-columns: repeat(3, 60px);
-    grid-template-rows: repeat(3, 90px);
-    gap: 6px;
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(3, 75px);
+    gap: 4px;
     margin: 0 auto;
     margin-top: 15px;
     margin-bottom: 8px;
@@ -575,13 +575,13 @@ button:disabled {
 }
 
 .mini-card {
-    width: 60px;
-    height: 90px;
+    width: 50px;
+    height: 75px;
     border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     position: relative;
@@ -597,7 +597,7 @@ button:disabled {
 .mini-card.back::after {
     content: "Hilo";
     position: absolute;
-    font-size: 16px;
+    font-size: 14px;
     color: #ffffff;
 }
 
@@ -724,7 +724,7 @@ button:disabled {
 
 /* --- Live Score Summary Table --- */
 .score-summary-container {
-    margin-top: 30px;
+    margin-top: 10px;
     padding: 15px;
     background-color: rgba(6, 96, 105, 0.8); /* Darker teal background */
     border-radius: 10px;
@@ -735,8 +735,9 @@ button:disabled {
 
 .score-summary-container h3 {
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Slightly reduced margin */
     color: #ffeb3b; /* Highlight title */
+    font-size: 1em; /* Reduced font size */
 }
 
 #live-score-table-content {
@@ -748,10 +749,10 @@ button:disabled {
 .score-summary-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 12px;
+    padding: 5px 8px; /* Reduced padding */
     background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    font-size: 16px;
+    border-radius: 4px; /* Slightly smaller radius */
+    font-size: 12px; /* Reduced font size */
 }
 
 .score-summary-item .player-name {
@@ -769,4 +770,20 @@ button:disabled {
     border: 1px solid #ffeb3b;
 }
 
-/* --- End Live Score Summary Table --- */ 
+/* --- End Live Score Summary Table --- */
+
+/* Make cards in the draw/discard piles smaller */
+#draw-pile .card, #discard-pile .card {
+    width: 50px;
+    height: 75px;
+    font-size: 20px; /* Adjust font size for number */
+}
+
+#draw-pile .card.back::after {
+    font-size: 16px; /* Adjust "Hilo" text size */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+} 
