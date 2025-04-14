@@ -885,12 +885,15 @@ socket.on('allPlayerGrids', (data) => {
     displayAllPlayerGrids(data.playerGrids, data.players);
 });
 
-socket.on('drawnCardPreview', (data) => {
-    if (!isMyTurn) return; // Should only be received by the current player
+// NEW: Handle card preview broadcast to all players
+socket.on('playerDrawingPreview', (data) => {
+    const { playerId: drawingPlayerId, card, drawPile } = data;
+    const drawingPlayer = players.find(p => p.id === drawingPlayerId);
+    const drawingPlayerName = drawingPlayer ? drawingPlayer.name : 'A player';
 
-    const { card, drawPile } = data;
+    console.log(`[Client] Received playerDrawingPreview for ${drawingPlayerName} (ID: ${drawingPlayerId}). Card: ${card.number} ${card.color}`);
 
-    // Update preview div
+    // Update preview div visibility and style for everyone
     if (drawnCardPreviewDiv) {
         const colorClass = card.color || cardColorMap[card.number] || 'blue';
         drawnCardPreviewDiv.className = 'card ' + colorClass; // Reset classes and add color
@@ -898,26 +901,82 @@ socket.on('drawnCardPreview', (data) => {
         drawnCardPreviewDiv.classList.remove('hidden');
     }
 
-    // Update draw pile count display
+    // Update draw pile count display for everyone
     if (drawPileCountSpan) drawPileCountSpan.textContent = drawPile;
 
-    // Update state and UI
-    currentAction = 'drawnPreview';
-    selectedCard = null; // Clear any previous selection visual
-    drawPileDiv.classList.remove('selected');
-    discardPileCard.classList.remove('selected');
-    drawPileDiv.style.pointerEvents = 'none'; // Keep draw disabled
-    discardPileCard.style.pointerEvents = 'auto'; // Enable discard pile click
+    // --- Logic specific to the player who is drawing --- 
+    if (drawingPlayerId === playerId) { 
+        isMyTurn = true; // Ensure isMyTurn is true if they are drawing
+        currentAction = 'drawnPreview';
+        selectedCard = null; // Clear any previous selection visual
+        if(drawPileDiv) {
+            drawPileDiv.classList.remove('selected');
+            drawPileDiv.style.pointerEvents = 'none'; // Keep draw disabled
+        }
+        if(discardPileCard) {
+            discardPileCard.classList.remove('selected');
+            discardPileCard.style.pointerEvents = 'auto'; // Enable discard pile click
+        }
 
-    if (playerMessage) {
-        playerMessage.textContent = `Drawn: ${card.number} (${card.color}). Click Discard to discard & flip, or click your grid to exchange.`;
+        if (playerMessage) {
+            playerMessage.textContent = `You drew: ${card.number} (${card.color}). Click Discard to discard & flip, or click your grid to exchange.`;
+        }
+
+        // Make grid interactive for exchange
+        updateGridInteractivity(players); // Pass the global players array
+    } 
+    // --- Logic for other players observing the draw --- 
+    else {
+        if (playerMessage) {
+            playerMessage.textContent = `${drawingPlayerName} drew a card and is deciding...`;
+        }
+        // Ensure their interactions remain disabled if it's not their turn
+        if (!isMyTurn) {
+             if(drawPileDiv) drawPileDiv.style.pointerEvents = 'none';
+             if(discardPileCard) discardPileCard.style.pointerEvents = 'none';
+             // Also ensure grid isn't interactive for them
+             updateGridInteractivity(players);
+        }
+    }
+});
+
+// NEW: Handle clearing the preview broadcast
+socket.on('clearPlayerDrawingPreview', (data) => {
+    const { playerId: drawingPlayerId } = data;
+    console.log(`[Client] Received clearPlayerDrawingPreview for player ID: ${drawingPlayerId}`);
+
+    // Hide the preview div for everyone
+    if (drawnCardPreviewDiv) {
+        drawnCardPreviewDiv.classList.add('hidden');
+        drawnCardPreviewDiv.textContent = ''; // Clear text
+        drawnCardPreviewDiv.className = 'card hidden'; // Reset classes
     }
 
-    // Log the players array just before updating interactivity
-    console.log('Handling drawnCardPreview. Global players:', players);
-
-    // Make grid interactive for exchange
-    updateGridInteractivity(players); // Pass the global players array
+    // If this client was the one whose preview is being cleared, reset their action state if needed
+    if (drawingPlayerId === playerId && currentAction === 'drawnPreview') {
+        console.log('[Client] Clearing local drawnPreview state.');
+        // We only reset the action state partially. The server will follow up
+        // with 'mustFlip' or 'gameUpdate' which will call resetActionState more fully.
+        currentAction = null; 
+        // Re-enable draw pile ONLY IF it's still their turn (which it should be unless an error occurred)
+        if (isMyTurn && drawPileDiv) {
+             // It's usually better to wait for the next state (mustFlip/gameUpdate) to re-enable things.
+             // drawPileDiv.style.pointerEvents = 'auto'; 
+        }
+        if (playerMessage) {
+             // Message will be updated by subsequent event (mustFlip/gameUpdate)
+             playerMessage.textContent = 'Processing action...'; 
+        }
+    } else if (!isMyTurn) {
+        // If another player's preview was cleared, update the message if necessary
+        const currentPlayer = players.find(p => p.id === socket.id); // Re-find current player from global list
+         if (playerMessage && currentPlayer) {
+             playerMessage.textContent = `Waiting for ${currentPlayer.name} to make a move.`;
+         } else if (playerMessage) {
+             playerMessage.textContent = `Waiting for next turn...`; // Fallback message
+         }
+    }
+    // Note: We don't call updateGridInteractivity here, as the next server event (`mustFlip` or `gameUpdate`) will handle that.
 });
 
 socket.on('mustFlip', (data) => {

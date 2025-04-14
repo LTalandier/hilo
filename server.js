@@ -428,16 +428,12 @@ io.on('connection', (socket) => {
 
     console.log(`[Game ${gameId}] Player ${currentPlayer.name} drew ${drawnCard.number} ${drawnCard.color} for preview. Draw pile size: ${game.drawPile.length}.`);
 
-    // Send the drawn card only to the current player
-    socket.emit('drawnCardPreview', {
+    // Broadcast the drawn card preview to everyone in the game
+    console.log(`[Game ${gameId}] Broadcasting 'playerDrawingPreview' for player ${currentPlayer.name}.`);
+    io.to(gameId).emit('playerDrawingPreview', {
+      playerId: socket.id, // Identify who is drawing
       card: drawnCard,
       drawPile: game.drawPile.length // Update draw pile count for the player
-    });
-
-    // Notify other players that the draw pile decreased (optional)
-    socket.to(gameId).emit('gameUpdatePartial', {
-      drawPile: game.drawPile.length,
-      // No change to discard, current player, or grids yet
     });
   });
   
@@ -468,6 +464,10 @@ io.on('connection', (socket) => {
 
     // Clear the preview card state FIRST
     delete game.drawnCardPreview[socket.id];
+
+    // Notify all clients to clear the preview display for this player
+    console.log(`[Game ${gameId}] Broadcasting 'clearPlayerDrawingPreview' for player ${currentPlayer.name}.`);
+    io.to(gameId).emit('clearPlayerDrawingPreview', { playerId: socket.id });
 
     // Action 1: Discard the drawn card and must flip
     if (action === 'discardAndFlip') {
@@ -561,6 +561,9 @@ io.on('connection', (socket) => {
     // Invalid action
     console.log(`[Game ${gameId}] Player ${currentPlayer.name} submitted invalid action '${action}' for placeDrawnCard.`);
     socket.emit('error', 'Invalid action specified for placing drawn card.');
+    // Also clear preview if action was invalid but a card was being previewed
+    console.log(`[Game ${gameId}] Broadcasting 'clearPlayerDrawingPreview' due to invalid action for player ${currentPlayer.name}.`);
+    io.to(gameId).emit('clearPlayerDrawingPreview', { playerId: socket.id });
   });
   
   // Place a card (Only for Discard -> Grid exchange)
@@ -1063,7 +1066,7 @@ io.on('connection', (socket) => {
     // Now, add the final round scores (potentially doubled) to total scores
     for (const player of game.players) {
         player.score += player.roundScore;
-        console.log(`[Game ${gameId}] Player ${player.name} total score updated to ${player.score} (Round: ${player.roundScore}).`);
+        console.log(`[Game ${gameId}] Player ${player.name} total score updated to ${player.score} (Round score: ${player.roundScore}).`);
     }
     
     console.log(`[Game ${gameId}] Emitting 'roundEnd' event.`);
